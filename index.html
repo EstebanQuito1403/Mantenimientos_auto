@@ -931,18 +931,18 @@
       } else if (e.dataTransfer?.files) {
         collected = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
       }
-      if (collected.length > 0) handleIncomingFiles(collected, false);
+      if (collected.length > 0) handleIncomingFiles(collected, state.blocks.length > 0);
     });
 
     document.getElementById('input-files').addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
-      if (files.length > 0) handleIncomingFiles(files, false);
+      if (files.length > 0) handleIncomingFiles(files, state.blocks.length > 0);
       e.target.value = '';
     });
 
     document.getElementById('input-folder').addEventListener('change', (e) => {
       const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
-      if (files.length > 0) handleIncomingFiles(files, false);
+      if (files.length > 0) handleIncomingFiles(files, state.blocks.length > 0);
       e.target.value = '';
     });
 
@@ -1017,13 +1017,15 @@
         );
       }
 
-      if (append) {
+      const shouldAppend = append || state.blocks.length > 0;
+      if (shouldAppend) {
         state.photos.push(...newPhotos);
       } else {
         state.photos = newPhotos;
+        state.blocks = [];
       }
 
-      await runVisionAnalysisAndLinking();
+      await runVisionAnalysisAndLinking(newPhotos, shouldAppend);
     }
 
     async function requestGeminiWithAutoFallback(parts, batchLabel = '') {
@@ -1187,20 +1189,22 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       return parsed.items || [];
     }
 
-    async function runVisionAnalysisAndLinking() {
-      if (state.photos.length === 0) return;
+    async function runVisionAnalysisAndLinking(targetPhotos = null, appendMode = false) {
+      const photosToProcess = targetPhotos || state.photos;
+      if (photosToProcess.length === 0) return;
 
       if (state.apiKey) {
         try {
           const batchSize = 5;
-          const totalBatches = Math.ceil(state.photos.length / batchSize);
+          const totalBatches = Math.ceil(photosToProcess.length / batchSize);
+          const batchSalt = Date.now();
           for (let b = 0; b < totalBatches; b++) {
             const start = b * batchSize;
-            const slice = state.photos.slice(start, start + batchSize);
+            const slice = photosToProcess.slice(start, start + batchSize);
             const batchLabel = `Lote ${b + 1} de ${totalBatches} (${slice.length} fotos)`;
             setProgress(
               true,
-              'Analizando equipos con Visión IA...',
+              appendMode ? 'Analizando fotos nuevas con Visión IA...' : 'Analizando equipos con Visión IA...',
               35 + ((b + 0.5) / totalBatches) * 55,
               `${batchLabel} usando ${state.model}...`
             );
@@ -1210,7 +1214,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
               if (target) {
                 target.aiLabel = (item.equipment_name || 'EQUIPO DE MEDICIÓN').toUpperCase().trim();
                 target.aiRole = item.role || 'unit';
-                target.aiGroup = `b${b}_${item.pair_key || item.index}`;
+                target.aiGroup = `b${batchSalt}_${b}_${item.pair_key || item.index}`;
               }
             });
             if (b < totalBatches - 1) {
@@ -1223,27 +1227,28 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         }
       }
 
-      // Build linked blocks (1 or 2 photos per block)
+      // Build linked blocks (1 or 2 photos per block) only for the processed batch
       setProgress(true, 'Vinculando pares y armando páginas FOR-PE-017...', 95, 'Generando bloques fotográficos...');
+      const baseCount = appendMode ? state.blocks.length : 0;
       const newBlocks = [];
       let i = 0;
-      while (i < state.photos.length) {
-        const curr = state.photos[i];
-        const next = state.photos[i + 1];
+      while (i < photosToProcess.length) {
+        const curr = photosToProcess[i];
+        const next = photosToProcess[i + 1];
 
         if (!curr.aiLabel) {
           // Offline fallback grouping
           if (next && !next.aiLabel) {
             newBlocks.push({
-              id: `blk_${Date.now()}_${i}`,
-              title: `EQUIPO DE MEDICIÓN #${newBlocks.length + 1}`,
+              id: `blk_${Date.now()}_${baseCount + i}`,
+              title: `EQUIPO DE MEDICIÓN #${baseCount + newBlocks.length + 1}`,
               photoIds: [curr.id, next.id]
             });
             i += 2;
           } else {
             newBlocks.push({
-              id: `blk_${Date.now()}_${i}`,
-              title: `EQUIPO DE MEDICIÓN #${newBlocks.length + 1}`,
+              id: `blk_${Date.now()}_${baseCount + i}`,
+              title: `EQUIPO DE MEDICIÓN #${baseCount + newBlocks.length + 1}`,
               photoIds: [curr.id]
             });
             i += 1;
@@ -1263,14 +1268,14 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
             rightId = curr.id;
           }
           newBlocks.push({
-            id: `blk_${Date.now()}_${i}`,
+            id: `blk_${Date.now()}_${baseCount + i}`,
             title: curr.aiLabel,
             photoIds: [leftId, rightId]
           });
           i += 2;
         } else {
           newBlocks.push({
-            id: `blk_${Date.now()}_${i}`,
+            id: `blk_${Date.now()}_${baseCount + i}`,
             title: curr.aiLabel,
             photoIds: [curr.id]
           });
@@ -1278,14 +1283,38 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         }
       }
 
-      state.blocks = newBlocks;
+      let firstAddedIdx = null;
+      if (appendMode && state.blocks.length > 0) {
+        firstAddedIdx = state.blocks.length;
+        state.blocks.push(...newBlocks);
+        lastMovedTargetIdx = firstAddedIdx;
+      } else {
+        state.blocks = newBlocks;
+      }
+
       setProgress(false);
       renderEditorGrid();
       renderReportPages();
+
+      if (firstAddedIdx !== null) {
+        requestAnimationFrame(() => {
+          const grid = document.getElementById('blocks-grid');
+          const firstNewCard = grid?.querySelector(`[data-block-idx="${firstAddedIdx}"]`);
+          if (firstNewCard) {
+            firstNewCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        });
+      }
     }
 
     document.getElementById('btn-reanalyze').addEventListener('click', () => {
-      runVisionAnalysisAndLinking();
+      if (state.blocks.length > 0) {
+        const ok = confirm(
+          '¿Deseas volver a analizar y reagrupar todas las fotos con IA?\n\nEsto reiniciará el orden manual actual. (Si solo quieres añadir fotos nuevas conservando tu orden, usa "+ Agregar más fotos").'
+        );
+        if (!ok) return;
+      }
+      runVisionAnalysisAndLinking(null, false);
     });
 
     document.getElementById('btn-clear-all').addEventListener('click', () => {
@@ -1616,6 +1645,8 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
               return;
             } else if (act === 'del') {
               state.blocks.splice(idx, 1);
+              const activeIds = new Set(state.blocks.flatMap((b) => b.photoIds));
+              state.photos = state.photos.filter((p) => activeIds.has(p.id));
             } else if (act === 'swap' && blk.photoIds.length === 2) {
               blk.photoIds.reverse();
             } else if (act === 'split' && blk.photoIds.length === 2) {
