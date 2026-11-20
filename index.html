@@ -744,10 +744,14 @@
     const elZoomLabel = document.getElementById('zoom-label');
     const elReportContainer = document.getElementById('report-pages-container');
 
-    elZoomSlider.addEventListener('input', (e) => {
-      const val = e.target.value;
+    function applyPreviewZoom(val) {
       elZoomLabel.textContent = `${val}%`;
-      elReportContainer.style.transform = `scale(${val / 100})`;
+      elReportContainer.style.zoom = `${val}%`;
+    }
+    applyPreviewZoom(elZoomSlider.value);
+
+    elZoomSlider.addEventListener('input', (e) => {
+      applyPreviewZoom(e.target.value);
     });
 
     // =========================================================================
@@ -1233,17 +1237,21 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       grid.innerHTML = '';
       state.blocks.forEach((blk, idx) => {
         const card = document.createElement('div');
-        card.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex flex-col justify-between gap-2.5';
+        card.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex flex-col justify-between gap-2.5 overflow-hidden';
 
         const p1 = getPhotoById(blk.photoIds[0]);
         const p2 = blk.photoIds[1] ? getPhotoById(blk.photoIds[1]) : null;
 
         const imgsHtml = p2
-          ? `<div class="grid grid-cols-2 gap-1.5 h-28 bg-white p-1.5 rounded-lg border border-slate-200">
-               <img src="${p1?.dataUrl || ''}" class="w-full h-full object-contain rounded" />
-               <img src="${p2?.dataUrl || ''}" class="w-full h-full object-contain rounded" />
+          ? `<div class="grid grid-cols-2 grid-rows-1 gap-1.5 h-28 bg-white p-1.5 rounded-lg border border-slate-200 overflow-hidden">
+               <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
+                 <img src="${p1?.dataUrl || ''}" class="max-w-full max-h-full object-contain rounded" />
+               </div>
+               <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
+                 <img src="${p2?.dataUrl || ''}" class="max-w-full max-h-full object-contain rounded" />
+               </div>
              </div>`
-          : `<div class="h-28 bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
+          : `<div class="h-28 bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
                <img src="${p1?.dataUrl || ''}" class="max-h-full max-w-full object-contain rounded" />
              </div>`;
 
