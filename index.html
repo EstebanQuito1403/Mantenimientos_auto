@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FOR-PE-017 | Generador de Informes de Mantenimiento - JR Power Quality</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+  <style>
+    :root {
+      --pq-navy: #162A50;
+      --pq-slate: #4D4D4F;
+      --pq-silver: #B0B2B5;
+      --page-w: 215.9mm;
+      --page-h: 279.4mm;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: #eef2f6;
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Exact FOR-PE-017 Institutional Document Styling */
+    .report-sheet {
+      width: 215.9mm;
+      height: 279.4mm;
+      background: #ffffff;
+      padding: 15mm 18mm 15mm 18mm;
+      margin: 0 auto 24px auto;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000000;
+      overflow: hidden;
+      page-break-after: always;
+      break-after: page;
+    }
+
+    .report-sheet:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    /* Institutional Header Table */
+    .hdr-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-bottom: 6mm;
+      flex-shrink: 0;
+    }
+
+    .hdr-table td {
+      border: 1.2pt solid #000000;
+      vertical-align: middle;
+      padding: 2px 6px;
+    }
+
+    .hdr-logo-cell {
+      width: 27%;
+      height: 19.5mm;
+      text-align: center;
+      padding: 3px 5px !important;
+    }
+
+    .hdr-logo-img {
+      max-width: 96%;
+      max-height: 16.5mm;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .hdr-title-cell {
+      width: 48%;
+      text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 10.5pt;
+      line-height: 1.22;
+      letter-spacing: 0.1px;
+      text-transform: uppercase;
+    }
+
+    .hdr-meta-cell {
+      width: 25%;
+      text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 8.8pt;
+      line-height: 1.15;
+      height: 6.5mm;
+      padding: 1px 4px !important;
+    }
+
+    /* Document Body Typography */
+    .doc-sec-title {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 11pt;
+      line-height: 1.2;
+      margin-top: 4.5mm;
+      margin-bottom: 3mm;
+      text-transform: uppercase;
+    }
+
+    .doc-sec-title.first-sec {
+      margin-top: 2mm;
+    }
+
+    .doc-indent-p {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 400;
+      font-size: 11pt;
+      line-height: 1.22;
+      text-align: justify;
+      text-indent: 12.5mm;
+      margin: 0 0 4.5mm 0;
+    }
+
+    .doc-def-term {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 11pt;
+      line-height: 1.2;
+      margin: 4.5mm 0 2.5mm 0;
+    }
+
+    .doc-def-desc {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 400;
+      font-size: 11pt;
+      line-height: 1.22;
+      text-align: justify;
+      margin: 0 0 3.5mm 0;
+    }
+
+    /* Section 4 Photo Blocks */
+    .photo-blocks-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 5.5mm;
+      margin-top: 1.5mm;
+    }
+
+    .equip-box {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .equip-box.framed td {
+      border: 1.2pt solid #000000;
+    }
+
+    .equip-box.borderless td {
+      border: none;
+    }
+
+    .equip-img-cell {
+      padding: 2.5mm;
+      text-align: center;
+      vertical-align: middle;
+      background: #ffffff;
+      height: 82mm;
+    }
+
+    .equip-img-single {
+      max-width: 138mm;
+      max-height: 76mm;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .equip-img-pair {
+      max-width: 82mm;
+      max-height: 76mm;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .equip-caption-cell {
+      padding: 2mm 4mm;
+      text-align: center;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
+      font-size: 10.5pt;
+      line-height: 1.2;
+      text-transform: uppercase;
+      background: #ffffff;
+    }
+
+    /* Section 6 Change Control Table */
+    .changelog-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      margin-top: 2mm;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+    }
+
+    .changelog-table th,
+    .changelog-table td {
+      border: 1.2pt solid #000000;
+      padding: 2.5mm 4mm;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .changelog-table th {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Print Rules for Exact PDF Generation */
+    @media print {
+      @page {
+        size: letter portrait;
+        margin: 0;
+      }
+
+      body {
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      #preview-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        transform: none !important;
+        width: 100% !important;
+      }
+
+      .report-sheet {
+        margin: 0 !important;
+        box-shadow: none !important;
+        width: 215.9mm !important;
+        height: 279.4mm !important;
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+
+      .report-sheet:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- TOP TOOLBAR (NO PRINT) -->
+  <header class="no-print sticky top-0 z-40 bg-[#162A50] text-white shadow-lg border-b border-slate-700">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="bg-white rounded-md px-2.5 py-1 flex items-center justify-center shadow-sm">
+          <img id="toolbar-logo" alt="Power Quality" class="h-7 w-auto object-contain" />
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight">Generador Automático FOR-PE-017</h1>
+            <span class="text-[11px] font-semibold uppercase tracking-wider bg-blue-500/20 text-blue-200 border border-blue-400/30 px-2 py-0.5 rounded">
+              JR Power Quality
+            </span>
+          </div>
+          <p class="text-xs text-slate-300">Informe de Mantenimiento Preventivo de Equipos · Identificación y Vinculación Automática por IA</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <button id="btn-toggle-config" type="button"
+          class="px-3 py-2 rounded-lg text-xs sm:text-sm font-medium bg-slate-800 hover:bg-slate-700 border border-slate-600 transition flex items-center gap-1.5">
+          <span>⚙️</span>
+          <span>Configurar</span>
+        </button>
+
+        <button id="btn-export-docx" type="button" disabled
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow flex items-center gap-1.5">
+          <span>📄</span>
+          <span>Descargar Word (.docx)</span>
+        </button>
+
+        <button id="btn-print-pdf" type="button" disabled
+          class="px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow flex items-center gap-1.5">
+          <span>🖨️</span>
+          <span>Guardar / Imprimir PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- COLLAPSIBLE CONFIGURATION DRAWER -->
+    <div id="config-drawer" class="hidden bg-slate-900/95 border-t border-slate-700 text-slate-100">
+      <div class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+        <!-- Col 1: Gemini API Key -->
+        <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-blue-300 uppercase tracking-wider">1. Motor de Visión IA (Gemini)</span>
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener"
+              class="text-[11px] text-blue-400 hover:underline">Obtener API Key ↗</a>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Google Gemini API Key (se guarda en tu navegador):</label>
+            <div class="flex gap-1.5">
+              <input id="cfg-api-key" type="password" placeholder="AIzaSy..."
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-blue-400" />
+              <button id="btn-toggle-key-vis" type="button"
+                class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-200">👁️</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1">Modelo:</label>
+              <select id="cfg-model"
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1.5 text-white">
+                <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Recomendado)</option>
+                <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1">Estilo de recuadro:</label>
+              <select id="cfg-frame-style"
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1.5 text-white">
+                <option value="framed" selected>Con recuadro (borde negro)</option>
+                <option value="borderless">Limpio (sin bordes)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 2: Format Metadata -->
+        <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 space-y-2.5">
+          <span class="font-bold text-blue-300 uppercase tracking-wider block">2. Datos del Formato FOR-PE-017</span>
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-slate-300 mb-1">Código:</label>
+              <input id="cfg-code" type="text" value="FOR-PE-017"
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1.5 text-white" />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1">Versión:</label>
+              <input id="cfg-version" type="text" value="01"
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1.5 text-white" />
+            </div>
+            <div>
+              <label class="block text-slate-300 mb-1">Fecha Formato:</label>
+              <input id="cfg-format-date" type="text" value="09/06/2025"
+                class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1.5 text-white" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">Fecha de ejecución (Sección 2 - Alcance):</label>
+            <input id="cfg-exec-date" type="text"
+              class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2.5 py-1.5 text-white" />
+          </div>
+          <div class="flex items-center justify-between pt-1">
+            <span class="text-slate-300">Logo institucional:</span>
+            <div class="flex items-center gap-2">
+              <label class="cursor-pointer bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white font-medium">
+                Cambiar Logo
+                <input id="cfg-logo-upload" type="file" accept="image/*" class="hidden" />
+              </label>
+              <button id="btn-reset-logo" type="button" class="text-slate-400 hover:text-white underline">Restaurar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Col 3: Editable Sections -->
+        <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700 space-y-2">
+          <span class="font-bold text-blue-300 uppercase tracking-wider block">3. Textos Institucionales</span>
+          <div>
+            <label class="block text-slate-300 mb-1">1- Objetivo:</label>
+            <textarea id="cfg-objetivo" rows="2"
+              class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1 text-white">Realizar el inventario físico y el mantenimiento preventivo básico (limpieza y revisión visual) de los equipos de medición eléctrica en bodega, para verificar su existencia y asegurar su buen estado de conservación.</textarea>
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-1">5- Conclusiones:</label>
+            <textarea id="cfg-conclusiones" rows="2"
+              class="w-full bg-slate-950 border border-slate-600 rounded-lg px-2 py-1 text-white">La actividad permitió verificar la existencia física y el estado operativo de los equipos de medición, validando la conformidad del inventario frente a los registros de control y garantizando su disponibilidad inmediata para la ejecución de proyectos.</textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+    <!-- UPLOAD DROPZONE (NO PRINT) -->
+    <section id="upload-section" class="no-print bg-white rounded-2xl shadow-sm border-2 border-dashed border-slate-300 hover:border-[#162A50] transition-all p-6 sm:p-8 text-center">
+      <div class="max-w-2xl mx-auto space-y-4">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-[#162A50]/10 text-[#162A50] flex items-center justify-center text-3xl">
+          📸
+        </div>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-800">Sube las fotografías de los equipos o la carpeta completa</h2>
+          <p class="text-sm text-slate-500 mt-1">
+            No importa el nombre de los archivos. La IA analizará cada foto, identificará el equipo, vinculará automáticamente pares (equipo + accesorios o dos unidades) y armará el informe <strong>FOR-PE-017</strong>.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-3 pt-1">
+          <label class="cursor-pointer bg-[#162A50] hover:bg-[#1e3a6e] text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 text-sm">
+            <span>🖼️</span>
+            <span>Seleccionar Fotos</span>
+            <input id="input-files" type="file" accept="image/*" multiple class="hidden" />
+          </label>
+
+          <label class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 font-semibold px-5 py-2.5 rounded-xl transition flex items-center gap-2 text-sm">
+            <span>📁</span>
+            <span>Subir Carpeta Completa</span>
+            <input id="input-folder" type="file" webkitdirectory directory multiple class="hidden" />
+          </label>
+        </div>
+
+        <p class="text-xs text-slate-400">También puedes arrastrar y soltar archivos o carpetas directamente sobre este recuadro.</p>
+      </div>
+    </section>
+
+    <!-- PROGRESS BAR (NO PRINT) -->
+    <section id="progress-section" class="no-print hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2.5">
+          <div class="w-5 h-5 border-2 border-[#162A50] border-t-transparent rounded-full animate-spin"></div>
+          <span id="progress-title" class="font-bold text-sm text-slate-800">Procesando fotografías...</span>
+        </div>
+        <span id="progress-pct" class="text-xs font-bold text-[#162A50]">0%</span>
+      </div>
+      <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+        <div id="progress-bar" class="bg-[#162A50] h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+      <p id="progress-detail" class="text-xs text-slate-500 mt-2">Preparando imágenes...</p>
+    </section>
+
+    <!-- QUICK REVIEW & PAIRING EDITOR (NO PRINT) -->
+    <section id="editor-section" class="no-print hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <span>🔍 Revisión Rápida y Vinculación de Equipos</span>
+            <span id="badge-counts" class="text-xs font-semibold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">0 equipos · 0 fotos</span>
+          </h3>
+          <p class="text-xs text-slate-500">Verifica o ajusta nombres, intercambia izquierda/derecha, separa bloques dobles o une dos individuales antes de descargar.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="cursor-pointer px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">
+            + Agregar más fotos
+            <input id="input-more-files" type="file" accept="image/*" multiple class="hidden" />
+          </label>
+          <button id="btn-reanalyze" type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition">
+            🔄 Re-analizar con IA
+          </button>
+          <button id="btn-clear-all" type="button"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition">
+            🗑️ Limpiar todo
+          </button>
+        </div>
+      </div>
+
+      <!-- Autocomplete Catalog -->
+      <datalist id="equipment-catalog">
+        <option value="ANALIZADORES DRANETZ"></option>
+        <option value="ANALIZADORES ELSPEC"></option>
+        <option value="ANALIZADOR METREL MI2892"></option>
+        <option value="CÁMARA FLIR E8"></option>
+        <option value="CÁMARA FLIR T540"></option>
+        <option value="CÁMARAS HIKMICRO M30"></option>
+        <option value="MEGGER TRAX 220"></option>
+        <option value="MEDIDORES EXTECH 45170"></option>
+        <option value="MEDIDOR HIOKI IR 5051"></option>
+        <option value="MEGGER TDX 120"></option>
+        <option value="MEDIDORES DE IRRADIANCIA - FLUKE IRR1 - SOL"></option>
+        <option value="METREL MI 3280"></option>
+        <option value="MEGGER DLRO10HDX"></option>
+        <option value="MEGGERS DLRO2X"></option>
+        <option value="MEGGER MTR 105"></option>
+        <option value="MEGGERS MIT 1025"></option>
+        <option value="MEGOHMETRO NDB TERA 10"></option>
+        <option value="MICROHM - METREL MI 3252"></option>
+        <option value="PINZAS VOLTIAMPERIMETRICAS HIOKI"></option>
+        <option value="PINZA VOLTIAMPERIMETRICA KYORITSU"></option>
+        <option value="TELURÓMETRO - METREL MI2088"></option>
+        <option value="TELURÓMETRO MEGGER DET2/3"></option>
+        <option value="METREL MI 3295M"></option>
+        <option value="METREL MI 3295S"></option>
+        <option value="METREL MI 3200"></option>
+        <option value="VLF VIOLA BAUR"></option>
+        <option value="TRAZADOR DE CURVAS I-V HT IV600"></option>
+      </datalist>
+
+      <div id="blocks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto pr-1"></div>
+    </section>
+
+    <!-- DOCUMENT PREVIEW CONTROLS (NO PRINT) -->
+    <section class="no-print flex flex-wrap items-center justify-between gap-3 px-1">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-bold text-slate-700">Vista Previa del Informe Oficial:</span>
+        <span id="page-count-badge" class="text-xs font-semibold bg-[#162A50] text-white px-2.5 py-0.5 rounded-full">2 páginas</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-slate-600">
+        <span>Zoom vista previa:</span>
+        <input id="zoom-slider" type="range" min="55" max="110" value="90" class="w-28 accent-[#162A50]" />
+        <span id="zoom-label" class="font-semibold w-10">90%</span>
+      </div>
+    </section>
+
+    <!-- PAGINATED REPORT OUTPUT -->
+    <div id="preview-wrapper" class="overflow-x-auto pb-10">
+      <div id="report-pages-container" class="origin-top transition-transform duration-150"></div>
+    </div>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. HIGH-RESOLUTION VECTOR RENDERING OF OFFICIAL POWER QUALITY LOGO
+    // =========================================================================
+    function generateOfficialLogoDataURL() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1320;
+      canvas.height = 440;
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Measure main words: "POWER" and "QUALITY"
+      const mainFont = 'italic 900 132px Arial, Helvetica, sans-serif';
+      ctx.font = mainFont;
+      const powerW = ctx.measureText('POWER').width;
+      const qualityW = ctx.measureText('QUALITY').width;
+      const boltGap = 112;
+      const totalW = powerW + boltGap + qualityW;
+      const startX = (canvas.width - totalW) / 2 - 12;
+      const baselineY = 290;
+
+      // Draw "POWER" (#4D4D4F)
+      ctx.fillStyle = '#4D4D4F';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('POWER', startX, baselineY);
+
+      // Draw Central Lightning Bolt between POWER and QUALITY
+      const bx = startX + powerW + 46;
+      const by = 42;
+
+      // Light steel-blue shadow / offset layer (#8092AC)
+      ctx.beginPath();
+      ctx.moveTo(bx + 18, by + 115);
+      ctx.lineTo(bx + 104, by + 115);
+      ctx.lineTo(bx - 16, by + 305);
+      ctx.lineTo(bx + 12, by + 195);
+      ctx.lineTo(bx - 42, by + 195);
+      ctx.closePath();
+      ctx.fillStyle = '#8092AC';
+      ctx.fill();
+
+      // Primary deep navy upper & lower bolt (#162A50)
+      ctx.beginPath();
+      ctx.moveTo(bx + 34, by);
+      ctx.lineTo(bx - 52, by + 178);
+      ctx.lineTo(bx + 14, by + 178);
+      ctx.lineTo(bx - 28, by + 332);
+      ctx.lineTo(bx + 86, by + 144);
+      ctx.lineTo(bx + 16, by + 144);
+      ctx.closePath();
+      ctx.fillStyle = '#162A50';
+      ctx.fill();
+
+      // Subtle dark fold crease (#0D1A33)
+      ctx.beginPath();
+      ctx.moveTo(bx - 6, by + 178);
+      ctx.lineTo(bx + 14, by + 178);
+      ctx.lineTo(bx + 16, by + 144);
+      ctx.closePath();
+      ctx.fillStyle = '#0D1A33';
+      ctx.fill();
+
+      // Draw "QUALITY" (#B0B2B5)
+      const qX = startX + powerW + boltGap;
+      ctx.fillStyle = '#B0B2B5';
+      ctx.font = mainFont;
+      ctx.fillText('QUALITY', qX, baselineY);
+
+      // Draw Registered Trademark ® (#162A50)
+      ctx.font = '700 34px Arial, Helvetica, sans-serif';
+      ctx.fillStyle = '#162A50';
+      ctx.fillText('®', qX + qualityW + 6, baselineY - 92);
+
+      // Draw Subtitle "O P T I M A L   E L E C T R I C   S Y S T E M"
+      const subtitle = 'OPTIMAL ELECTRIC SYSTEM';
+      const spacedSub = subtitle.split('').join(' ');
+      ctx.font = 'italic 600 33px Arial, Helvetica, sans-serif';
+      ctx.fillStyle = '#4D4D4F';
+      const subW = ctx.measureText(spacedSub).width;
+      ctx.fillText(spacedSub, (canvas.width - subW) / 2, 368);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    // =========================================================================
+    // 2. APPLICATION STATE & INITIALIZATION
+    // =========================================================================
+    const DEFAULT_LOGO = generateOfficialLogoDataURL();
+
+    function getDefaultSpanishDate() {
+      const months = [
+        'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+        'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'
+      ];
+      const now = new Date();
+      return `${now.getDate()} de ${months[now.getMonth()]} de ${now.getFullYear()}`;
+    }
+
+    const state = {
+      photos: [], // { id, name, lastModified, dataUrl, aiLabel, aiRole, aiGroup }
+      blocks: [], // { id, title, photoIds: [id1] or [id1, id2] }
+      logoDataUrl: localStorage.getItem('jr_pq_logo') || DEFAULT_LOGO,
+      apiKey: localStorage.getItem('jr_pq_gemini_key') || '',
+      model: localStorage.getItem('jr_pq_model') || 'gemini-2.5-flash',
+      frameStyle: localStorage.getItem('jr_pq_frame_style') || 'framed',
+      code: 'FOR-PE-017',
+      version: '01',
+      formatDate: '09/06/2025',
+      execDate: getDefaultSpanishDate(),
+      objetivo: 'Realizar el inventario físico y el mantenimiento preventivo básico (limpieza y revisión visual) de los equipos de medición eléctrica en bodega, para verificar su existencia y asegurar su buen estado de conservación.',
+      conclusiones: 'La actividad permitió verificar la existencia física y el estado operativo de los equipos de medición, validando la conformidad del inventario frente a los registros de control y garantizando su disponibilidad inmediata para la ejecución de proyectos.'
+    };
+
+    // DOM Elements
+    const elToolbarLogo = document.getElementById('toolbar-logo');
+    const elConfigDrawer = document.getElementById('config-drawer');
+    const elCfgApiKey = document.getElementById('cfg-api-key');
+    const elCfgModel = document.getElementById('cfg-model');
+    const elCfgFrameStyle = document.getElementById('cfg-frame-style');
+    const elCfgCode = document.getElementById('cfg-code');
+    const elCfgVersion = document.getElementById('cfg-version');
+    const elCfgFormatDate = document.getElementById('cfg-format-date');
+    const elCfgExecDate = document.getElementById('cfg-exec-date');
+    const elCfgObjetivo = document.getElementById('cfg-objetivo');
+    const elCfgConclusiones = document.getElementById('cfg-conclusiones');
+
+    // Sync initial config inputs
+    elToolbarLogo.src = state.logoDataUrl;
+    elCfgApiKey.value = state.apiKey;
+    elCfgModel.value = state.model;
+    elCfgFrameStyle.value = state.frameStyle;
+    elCfgExecDate.value = state.execDate;
+
+    // Config event listeners
+    document.getElementById('btn-toggle-config').addEventListener('click', () => {
+      elConfigDrawer.classList.toggle('hidden');
+    });
+
+    document.getElementById('btn-toggle-key-vis').addEventListener('click', () => {
+      elCfgApiKey.type = elCfgApiKey.type === 'password' ? 'text' : 'password';
+    });
+
+    elCfgApiKey.addEventListener('input', (e) => {
+      state.apiKey = e.target.value.trim();
+      localStorage.setItem('jr_pq_gemini_key', state.apiKey);
+    });
+
+    elCfgModel.addEventListener('change', (e) => {
+      state.model = e.target.value;
+      localStorage.setItem('jr_pq_model', state.model);
+    });
+
+    elCfgFrameStyle.addEventListener('change', (e) => {
+      state.frameStyle = e.target.value;
+      localStorage.setItem('jr_pq_frame_style', state.frameStyle);
+      renderReportPages();
+    });
+
+    elCfgCode.addEventListener('input', (e) => { state.code = e.target.value; renderReportPages(); });
+    elCfgVersion.addEventListener('input', (e) => { state.version = e.target.value; renderReportPages(); });
+    elCfgFormatDate.addEventListener('input', (e) => { state.formatDate = e.target.value; renderReportPages(); });
+    elCfgExecDate.addEventListener('input', (e) => { state.execDate = e.target.value; renderReportPages(); });
+    elCfgObjetivo.addEventListener('input', (e) => { state.objetivo = e.target.value; renderReportPages(); });
+    elCfgConclusiones.addEventListener('input', (e) => { state.conclusiones = e.target.value; renderReportPages(); });
+
+    document.getElementById('cfg-logo-upload').addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        state.logoDataUrl = reader.result;
+        localStorage.setItem('jr_pq_logo', state.logoDataUrl);
+        elToolbarLogo.src = state.logoDataUrl;
+        renderReportPages();
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('btn-reset-logo').addEventListener('click', () => {
+      state.logoDataUrl = DEFAULT_LOGO;
+      localStorage.removeItem('jr_pq_logo');
+      elToolbarLogo.src = state.logoDataUrl;
+      renderReportPages();
+    });
+
+    // Zoom control
+    const elZoomSlider = document.getElementById('zoom-slider');
+    const elZoomLabel = document.getElementById('zoom-label');
+    const elReportContainer = document.getElementById('report-pages-container');
+
+    elZoomSlider.addEventListener('input', (e) => {
+      const val = e.target.value;
+      elZoomLabel.textContent = `${val}%`;
+      elReportContainer.style.transform = `scale(${val / 100})`;
+    });
+
+    // =========================================================================
+    // 3. FILE INGESTION (FILES, FOLDERS & DRAG-AND-DROP)
+    // =========================================================================
+    function compressImageFile(file, maxDim = 1280, quality = 0.85) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = reject;
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve({
+              dataUrl: canvas.toDataURL('image/jpeg', quality),
+              width,
+              height
+            });
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function traverseFileTree(item) {
+      const files = [];
+      if (item.isFile) {
+        const file = await new Promise((res) => item.file(res));
+        if (file && file.type.startsWith('image/')) files.push(file);
+      } else if (item.isDirectory) {
+        const dirReader = item.createReader();
+        const readAllEntries = async () => {
+          let entries = [];
+          while (true) {
+            const batch = await new Promise((res) => dirReader.readEntries(res));
+            if (!batch || batch.length === 0) break;
+            entries = entries.concat(batch);
+          }
+          return entries;
+        };
+        const entries = await readAllEntries();
+        for (const entry of entries) {
+          const subFiles = await traverseFileTree(entry);
+          files.push(...subFiles);
+        }
+      }
+      return files;
+    }
+
+    const elUploadSection = document.getElementById('upload-section');
+    elUploadSection.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      elUploadSection.classList.add('border-[#162A50]', 'bg-blue-50/40');
+    });
+    elUploadSection.addEventListener('dragleave', () => {
+      elUploadSection.classList.remove('border-[#162A50]', 'bg-blue-50/40');
+    });
+    elUploadSection.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      elUploadSection.classList.remove('border-[#162A50]', 'bg-blue-50/40');
+      const items = e.dataTransfer?.items;
+      let collected = [];
+      if (items && items.length > 0 && items[0].webkitGetAsEntry) {
+        for (const item of items) {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            const found = await traverseFileTree(entry);
+            collected.push(...found);
+          }
+        }
+      } else if (e.dataTransfer?.files) {
+        collected = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+      }
+      if (collected.length > 0) handleIncomingFiles(collected, false);
+    });
+
+    document.getElementById('input-files').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
+      if (files.length > 0) handleIncomingFiles(files, false);
+      e.target.value = '';
+    });
+
+    document.getElementById('input-folder').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
+      if (files.length > 0) handleIncomingFiles(files, false);
+      e.target.value = '';
+    });
+
+    document.getElementById('input-more-files').addEventListener('change', (e) => {
+      const files = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'));
+      if (files.length > 0) handleIncomingFiles(files, true);
+      e.target.value = '';
+    });
+
+    // =========================================================================
+    // 4. GEMINI VISION ANALYSIS & AUTOMATIC EQUIPMENT LINKING
+    // =========================================================================
+    function setProgress(visible, title = '', pct = 0, detail = '') {
+      const sec = document.getElementById('progress-section');
+      if (!visible) {
+        sec.classList.add('hidden');
+        return;
+      }
+      sec.classList.remove('hidden');
+      document.getElementById('progress-title').textContent = title;
+      document.getElementById('progress-pct').textContent = `${Math.round(pct)}%`;
+      document.getElementById('progress-bar').style.width = `${pct}%`;
+      document.getElementById('progress-detail').textContent = detail;
+    }
+
+    async function handleIncomingFiles(rawFiles, append = false) {
+      // Prompt for API key if not configured yet
+      if (!state.apiKey) {
+        elConfigDrawer.classList.remove('hidden');
+        const entered = window.prompt(
+          'Ingresa tu Google Gemini API Key (AIza...) para identificar y vincular los equipos automáticamente.\n\n(Si dejas esto vacío, las fotos se agruparán secuencialmente de a 2 para edición manual):'
+        );
+        if (entered && entered.trim()) {
+          state.apiKey = entered.trim();
+          elCfgApiKey.value = state.apiKey;
+          localStorage.setItem('jr_pq_gemini_key', state.apiKey);
+        }
+      }
+
+      // Sort chronologically by lastModified, then natural filename
+      rawFiles.sort((a, b) => {
+        if (a.lastModified !== b.lastModified) return a.lastModified - b.lastModified;
+        return a.name.localeCompare(b.name, undefined, { numeric: true });
+      });
+
+      setProgress(true, 'Optimizando fotografías...', 10, `Procesando ${rawFiles.length} imágenes...`);
+
+      const newPhotos = [];
+      for (let i = 0; i < rawFiles.length; i++) {
+        const f = rawFiles[i];
+        const compressed = await compressImageFile(f);
+        newPhotos.push({
+          id: `ph_${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${i}`,
+          name: f.name,
+          lastModified: f.lastModified,
+          dataUrl: compressed.dataUrl,
+          width: compressed.width,
+          height: compressed.height,
+          aiLabel: '',
+          aiRole: 'unit',
+          aiGroup: i
+        });
+        setProgress(
+          true,
+          'Optimizando fotografías...',
+          10 + ((i + 1) / rawFiles.length) * 25,
+          `Imagen ${i + 1} de ${rawFiles.length}: ${f.name}`
+        );
+      }
+
+      if (append) {
+        state.photos.push(...newPhotos);
+      } else {
+        state.photos = newPhotos;
+      }
+
+      await runVisionAnalysisAndLinking();
+    }
+
+    async function analyzeBatchWithGemini(batchPhotos) {
+      const parts = [
+        {
+          text: `Eres un ingeniero especialista en mantenimiento de equipos de medición eléctrica de JR Power Quality Optimal Electric System.
+Analiza las siguientes ${batchPhotos.length} fotografías numeradas del 0 al ${batchPhotos.length - 1} en orden secuencial.
+Para cada fotografía:
+1. Identifica el nombre exacto del equipo en MAYÚSCULAS usando la nomenclatura estándar de JR Power Quality cuando corresponda:
+   - ANALIZADORES DRANETZ (analizador azul Dranetz HDPQ Visa Plus / maletín Dranetz / bobinas Rogowski)
+   - ANALIZADORES ELSPEC (analizador azul Elspec Pure BlackBox / morral negro-amarillo / pinzas azules)
+   - ANALIZADOR METREL MI2892 (analizador negro-rojo Metrel Power Master MI 2892)
+   - CÁMARA FLIR E8 (maletín rígido negro con cámara termográfica FLIR E8)
+   - CÁMARAS HIKMICRO M30 (cámara termográfica Hikmicro M30 con cargador doble y maletín)
+   - MEGGER TRAX 220 (sistema gris Megger TRAX en caja metálica o su juego de cables rojos/negros/verdes en el piso)
+   - MEDIDORES EXTECH 45170 (medidores ambientales verdes Extech 45170)
+   - MEDIDOR HIOKI IR 5051 (megóhmetro azul/gris Hioki IR5051)
+   - MEGGER TDX 120 (equipo gris Megger TDX 120 o su maleta negra con cable grueso de alta tensión)
+   - MEDIDORES DE IRRADIANCIA - FLUKE IRR1 - SOL (medidor amarillo/gris Fluke IRR1-SOL con estuche negro)
+   - METREL MI 3280 (analizador gris/verde Metrel MI 3280 con pinzas Kelvin rojas/azules/amarillas)
+   - MEGGER DLRO10HDX (microóhmetro gris/negro Megger DLRO10HDX con cables Kelvin)
+   - MEGGERS DLRO2X (microóhmetro portátil gris/amarillo Megger DLRO2X con cables)
+   - MEGGER MTR 105 (probador negro/amarillo Megger Baker MTR105)
+   - MEGGERS MIT 1025 (megóhmetro Megger MIT1025 10kV)
+   - MEGOHMETRO NDB TERA 10 (megóhmetro gris NDB TERA 10)
+   - MICROHM - METREL MI 3252 (microóhmetro gris/verde Metrel MI 3252 MicroOhm 100A)
+   - PINZAS VOLTIAMPERIMETRICAS HIOKI (pinza azul/amarilla Hioki CM4375-50 + sonda de alto voltaje Hioki P2000 + estuche negro)
+   - PINZA VOLTIAMPERIMETRICA KYORITSU (pinza gris/turquesa Kyoritsu KEW SNAP 2009R)
+   - TELURÓMETRO - METREL MI2088 (telurómetro negro/verde menta Metrel MI 2088 + carretes azul/rojo + picas)
+   - TELURÓMETRO MEGGER DET2/3 (telurómetro Megger DET2/3 + 4 carretes de colores + cinta azul)
+   - METREL MI 3295M (medidor portátil gris/verde Metrel MI 3295M)
+   - METREL MI 3295S (estación gris/verde Metrel MI 3295S Step Contact Voltage + carrete negro + electrodos metálicos)
+   - METREL MI 3200 (megóhmetro gris/lima Metrel TeraOhm 10 kV MI 3200)
+   - VLF VIOLA BAUR (equipo blanco/gris BAUR Viola VLF en flight case o su cable rojo de alta tensión)
+   Si es otro equipo diferente, escribe su nombre técnico claro en español y MAYÚSCULAS.
+2. Indica si la foto es la unidad principal ("unit"), sus cables/accesorios ("accessories") o una segunda unidad del mismo modelo ("second_unit").
+3. Asigna un "pair_key" idéntico (ej. "dranetz_1", "trax_1", "hioki_1") cuando dos fotos consecutivas pertenezcan al mismo equipo o par de equipos que deban ir juntas en un mismo recuadro (máximo 2 fotos por pair_key).
+
+Responde ÚNICAMENTE con un JSON válido con esta estructura:
+{"items": [{"index": 0, "equipment_name": "NOMBRE EN MAYÚSCULAS", "role": "unit", "pair_key": "clave_1"}]}`
+        }
+      ];
+
+      batchPhotos.forEach((p, idx) => {
+        const base64 = p.dataUrl.split(',')[1];
+        parts.push({ text: `Foto index ${idx}:` });
+        parts.push({
+          inline_data: {
+            mime_type: 'image/jpeg',
+            data: base64
+          }
+        });
+      });
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(state.model)}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            temperature: 0.1,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Error API Gemini (${response.status}): ${errText}`);
+      }
+
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '{"items":[]}';
+      const parsed = JSON.parse(rawText);
+      return parsed.items || [];
+    }
+
+    async function runVisionAnalysisAndLinking() {
+      if (state.photos.length === 0) return;
+
+      if (state.apiKey) {
+        try {
+          const batchSize = 8;
+          const totalBatches = Math.ceil(state.photos.length / batchSize);
+          for (let b = 0; b < totalBatches; b++) {
+            const start = b * batchSize;
+            const slice = state.photos.slice(start, start + batchSize);
+            setProgress(
+              true,
+              'Analizando equipos con Visión IA...',
+              35 + ((b + 0.5) / totalBatches) * 55,
+              `Lote ${b + 1} de ${totalBatches} (${slice.length} fotos)...`
+            );
+            const results = await analyzeBatchWithGemini(slice);
+            results.forEach((item) => {
+              const target = slice[item.index];
+              if (target) {
+                target.aiLabel = (item.equipment_name || 'EQUIPO DE MEDICIÓN').toUpperCase().trim();
+                target.aiRole = item.role || 'unit';
+                target.aiGroup = `b${b}_${item.pair_key || item.index}`;
+              }
+            });
+          }
+        } catch (err) {
+          console.error(err);
+          alert(`No se pudo completar el análisis con Gemini Vision:\n${err.message}\n\nSe agruparán las fotos secuencialmente para que puedas editarlas manualmente.`);
+        }
+      }
+
+      // Build linked blocks (1 or 2 photos per block)
+      setProgress(true, 'Vinculando pares y armando páginas FOR-PE-017...', 95, 'Generando bloques fotográficos...');
+      const newBlocks = [];
+      let i = 0;
+      while (i < state.photos.length) {
+        const curr = state.photos[i];
+        const next = state.photos[i + 1];
+
+        if (!curr.aiLabel) {
+          // Offline fallback grouping
+          if (next && !next.aiLabel) {
+            newBlocks.push({
+              id: `blk_${Date.now()}_${i}`,
+              title: `EQUIPO DE MEDICIÓN #${newBlocks.length + 1}`,
+              photoIds: [curr.id, next.id]
+            });
+            i += 2;
+          } else {
+            newBlocks.push({
+              id: `blk_${Date.now()}_${i}`,
+              title: `EQUIPO DE MEDICIÓN #${newBlocks.length + 1}`,
+              photoIds: [curr.id]
+            });
+            i += 1;
+          }
+          continue;
+        }
+
+        const samePairKey = next && curr.aiGroup && next.aiGroup && curr.aiGroup === next.aiGroup;
+        const sameEquipName = next && curr.aiLabel === next.aiLabel;
+
+        if (samePairKey || sameEquipName) {
+          // Ensure main unit is on the left if one is accessories
+          let leftId = curr.id;
+          let rightId = next.id;
+          if (curr.aiRole === 'accessories' && next.aiRole === 'unit') {
+            leftId = next.id;
+            rightId = curr.id;
+          }
+          newBlocks.push({
+            id: `blk_${Date.now()}_${i}`,
+            title: curr.aiLabel,
+            photoIds: [leftId, rightId]
+          });
+          i += 2;
+        } else {
+          newBlocks.push({
+            id: `blk_${Date.now()}_${i}`,
+            title: curr.aiLabel,
+            photoIds: [curr.id]
+          });
+          i += 1;
+        }
+      }
+
+      state.blocks = newBlocks;
+      setProgress(false);
+      renderEditorGrid();
+      renderReportPages();
+    }
+
+    document.getElementById('btn-reanalyze').addEventListener('click', () => {
+      runVisionAnalysisAndLinking();
+    });
+
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      if (!confirm('¿Deseas eliminar todas las fotografías y bloques actuales?')) return;
+      state.photos = [];
+      state.blocks = [];
+      renderEditorGrid();
+      renderReportPages();
+    });
+
+    // =========================================================================
+    // 5. QUICK REVIEW & MANUAL BLOCK EDITOR
+    // =========================================================================
+    function getPhotoById(id) {
+      return state.photos.find((p) => p.id === id);
+    }
+
+    function renderEditorGrid() {
+      const sec = document.getElementById('editor-section');
+      const grid = document.getElementById('blocks-grid');
+      const badge = document.getElementById('badge-counts');
+      const btnDocx = document.getElementById('btn-export-docx');
+      const btnPdf = document.getElementById('btn-print-pdf');
+
+      if (state.blocks.length === 0) {
+        sec.classList.add('hidden');
+        btnDocx.disabled = true;
+        btnPdf.disabled = true;
+        return;
+      }
+
+      sec.classList.remove('hidden');
+      btnDocx.disabled = false;
+      btnPdf.disabled = false;
+      badge.textContent = `${state.blocks.length} equipos · ${state.photos.length} fotos`;
+
+      grid.innerHTML = '';
+      state.blocks.forEach((blk, idx) => {
+        const card = document.createElement('div');
+        card.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex flex-col justify-between gap-2.5';
+
+        const p1 = getPhotoById(blk.photoIds[0]);
+        const p2 = blk.photoIds[1] ? getPhotoById(blk.photoIds[1]) : null;
+
+        const imgsHtml = p2
+          ? `<div class="grid grid-cols-2 gap-1.5 h-28 bg-white p-1.5 rounded-lg border border-slate-200">
+               <img src="${p1?.dataUrl || ''}" class="w-full h-full object-contain rounded" />
+               <img src="${p2?.dataUrl || ''}" class="w-full h-full object-contain rounded" />
+             </div>`
+          : `<div class="h-28 bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center">
+               <img src="${p1?.dataUrl || ''}" class="max-h-full max-w-full object-contain rounded" />
+             </div>`;
+
+        card.innerHTML = `
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
+              <span>REC. #${idx + 1} · ${p2 ? '2 FOTOS VINCULADAS' : '1 FOTO INDIVIDUAL'}</span>
+              <div class="flex items-center gap-1">
+                <button type="button" data-act="up" title="Subir" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↑</button>
+                <button type="button" data-act="down" title="Bajar" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↓</button>
+                <button type="button" data-act="del" title="Eliminar" class="px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded hover:bg-rose-100">✕</button>
+              </div>
+            </div>
+            ${imgsHtml}
+            <input type="text" list="equipment-catalog" value="${blk.title.replace(/"/g, '&quot;')}"
+              class="w-full text-xs font-bold uppercase bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-[#162A50]" />
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+            ${p2 ? `
+              <button type="button" data-act="swap" class="px-2 py-1 bg-white border border-slate-300 rounded-md hover:bg-slate-100 font-medium">⇄ Invertir</button>
+              <button type="button" data-act="split" class="px-2 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md hover:bg-amber-100 font-medium">✂ Separar</button>
+            ` : (idx < state.blocks.length - 1 && state.blocks[idx + 1].photoIds.length === 1 ? `
+              <button type="button" data-act="merge" class="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 font-medium">🔗 Unir con siguiente</button>
+            ` : `<span class="text-slate-400 italic">Vista grande centrada</span>`)}
+          </div>
+        `;
+
+        // Input change
+        const titleInput = card.querySelector('input');
+        titleInput.addEventListener('input', (e) => {
+          blk.title = e.target.value.toUpperCase();
+          renderReportPages();
+        });
+
+        // Action buttons
+        card.querySelectorAll('button[data-act]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const act = btn.dataset.act;
+            if (act === 'up' && idx > 0) {
+              [state.blocks[idx - 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx - 1]];
+            } else if (act === 'down' && idx < state.blocks.length - 1) {
+              [state.blocks[idx + 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx + 1]];
+            } else if (act === 'del') {
+              state.blocks.splice(idx, 1);
+            } else if (act === 'swap' && blk.photoIds.length === 2) {
+              blk.photoIds.reverse();
+            } else if (act === 'split' && blk.photoIds.length === 2) {
+              const secondId = blk.photoIds.pop();
+              state.blocks.splice(idx + 1, 0, {
+                id: `blk_${Date.now()}_sp`,
+                title: blk.title,
+                photoIds: [secondId]
+              });
+            } else if (act === 'merge' && idx < state.blocks.length - 1) {
+              const nextBlk = state.blocks[idx + 1];
+              if (blk.photoIds.length === 1 && nextBlk.photoIds.length === 1) {
+                blk.photoIds.push(nextBlk.photoIds[0]);
+                state.blocks.splice(idx + 1, 1);
+              }
+            }
+            renderEditorGrid();
+            renderReportPages();
+          });
+        });
+
+        grid.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // 6. EXACT PAGINATED FOR-PE-017 RENDERER
+    // =========================================================================
+    function createHeaderHTML() {
+      return `
+        <table class="hdr-table">
+          <tbody>
+            <tr>
+              <td rowspan="3" class="hdr-logo-cell">
+                <img src="${state.logoDataUrl}" alt="Power Quality Optimal Electric System" class="hdr-logo-img" />
+              </td>
+              <td rowspan="3" class="hdr-title-cell">
+                INFORME DE MANTENIMIENTO DE<br />EQUIPOS JR POWER QUALITY
+              </td>
+              <td class="hdr-meta-cell">CODIGO: ${escapeHtml(state.code)}</td>
+            </tr>
+            <tr>
+              <td class="hdr-meta-cell">VERSIÓN:${escapeHtml(state.version)}</td>
+            </tr>
+            <tr>
+              <td class="hdr-meta-cell">FECHA: ${escapeHtml(state.formatDate)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function createEquipmentBlockHTML(blk) {
+      const frameClass = state.frameStyle === 'framed' ? 'framed' : 'borderless';
+      const p1 = getPhotoById(blk.photoIds[0]);
+      const p2 = blk.photoIds[1] ? getPhotoById(blk.photoIds[1]) : null;
+
+      if (p2) {
+        return `
+          <table class="equip-box ${frameClass}">
+            <tbody>
+              <tr>
+                <td class="equip-img-cell" style="width:50%;">
+                  <img src="${p1?.dataUrl || ''}" class="equip-img-pair" alt="${escapeHtml(blk.title)}" />
+                </td>
+                <td class="equip-img-cell" style="width:50%;">
+                  <img src="${p2?.dataUrl || ''}" class="equip-img-pair" alt="${escapeHtml(blk.title)}" />
+                </td>
+              </tr>
+              <tr>
+                <td colspan="2" class="equip-caption-cell">${escapeHtml(blk.title)}</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+
+      return `
+        <table class="equip-box ${frameClass}">
+          <tbody>
+            <tr>
+              <td class="equip-img-cell">
+                <img src="${p1?.dataUrl || ''}" class="equip-img-single" alt="${escapeHtml(blk.title)}" />
+              </td>
+            </tr>
+            <tr>
+              <td class="equip-caption-cell">${escapeHtml(blk.title)}</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function createClosingSectionsHTML() {
+      return `
+        <div style="margin-top: 4mm;">
+          <div class="doc-sec-title">5- CONCLUSIONES</div>
+          <p class="doc-indent-p">${escapeHtml(state.conclusiones)}</p>
+
+          <div class="doc-sec-title">6- CONTROL DE CAMBIOS</div>
+          <table class="changelog-table">
+            <thead>
+              <tr>
+                <th style="width: 28%;">FECHA</th>
+                <th style="width: 50%;">CAMBIO</th>
+                <th style="width: 22%;">VERSION</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${escapeHtml(state.formatDate)}</td>
+                <td>Documento original</td>
+                <td>${escapeHtml(state.version)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderReportPages() {
+      const container = document.getElementById('report-pages-container');
+      container.innerHTML = '';
+
+      // PAGE 1: Sections 1, 2, 3
+      const page1 = document.createElement('div');
+      page1.className = 'report-sheet';
+      page1.innerHTML = `
+        ${createHeaderHTML()}
+        <div class="doc-sec-title first-sec">1- OBJETIVO</div>
+        <p class="doc-indent-p">${escapeHtml(state.objetivo)}</p>
+
+        <div class="doc-sec-title">2- ALCANCE</div>
+        <p class="doc-indent-p">
+          Comprende las actividades de inventario y mantenimiento realizadas el día ${escapeHtml(state.execDate)} por el personal encargado de los equipos en bodega, aplicando los parámetros de seguridad y los procesos establecidos para el control y preservación de los activos.
+        </p>
+
+        <div class="doc-sec-title">3- DEFINICIONES</div>
+
+        <div class="doc-def-term">Manteniendo:</div>
+        <p class="doc-def-desc">
+          Acciones sistemáticas de limpieza e inspección visual destinadas conservar la operatividad y confiabilidad de los equipos, previniendo fallas antes de su uso.
+        </p>
+
+        <div class="doc-def-term">Inventario:</div>
+        <p class="doc-def-desc">
+          Verificación periódica de la existencia real, ubicación y estado de conservación de los activos frente a los registros de control.
+        </p>
+
+        <div class="doc-def-term">Equipos de medición:</div>
+        <p class="doc-def-desc">
+          Instrumento utilizado para cuantificar, verificar o ensayar variables eléctricas/físicas y asegurar el cumplimiento de los requisitos técnicos del proyecto.
+        </p>
+
+        <div class="doc-def-term">Inspección Visual:</div>
+        <p class="doc-def-desc">
+          Revisión física detallada del estado externo de los equipos para identificar daños mecánicos, desgaste, suciedad o condiciones anormales antes de su almacenamiento o puesta en servicio
+        </p>
+      `;
+      container.appendChild(page1);
+
+      let totalPages = 1;
+
+      if (state.blocks.length === 0) {
+        // Placeholder Page 2 when no photos uploaded yet
+        const page2 = document.createElement('div');
+        page2.className = 'report-sheet';
+        page2.innerHTML = `
+          ${createHeaderHTML()}
+          <div class="doc-sec-title first-sec">4- EJECUCIÓN Y REGISTRO FOTOGRÁFICO</div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center; border:1.2pt dashed #94a3b8; color:#64748b; font-size:10.5pt; text-align:center; padding:12mm; margin-bottom:4mm;">
+            Sube las fotografías de los equipos arriba para generar automáticamente los recuadros fotográficos de la Sección 4.
+          </div>
+          ${createClosingSectionsHTML()}
+        `;
+        container.appendChild(page2);
+        totalPages = 2;
+      } else {
+        // Chunk blocks into pages of 2 blocks each
+        const chunks = [];
+        for (let i = 0; i < state.blocks.length; i += 2) {
+          chunks.push(state.blocks.slice(i, i + 2));
+        }
+
+        chunks.forEach((chunk, cIdx) => {
+          const isFirstPhotoPage = cIdx === 0;
+          const isLastPhotoPage = cIdx === chunks.length - 1;
+          const canFitClosingOnThisPage = isLastPhotoPage && chunk.length === 1;
+
+          const sheet = document.createElement('div');
+          sheet.className = 'report-sheet';
+          sheet.innerHTML = `
+            ${createHeaderHTML()}
+            ${isFirstPhotoPage ? '<div class="doc-sec-title first-sec">4- EJECUCIÓN Y REGISTRO FOTOGRÁFICO</div>' : ''}
+            <div class="photo-blocks-area">
+              ${chunk.map((b) => createEquipmentBlockHTML(b)).join('')}
+              ${canFitClosingOnThisPage ? createClosingSectionsHTML() : ''}
+            </div>
+          `;
+          container.appendChild(sheet);
+          totalPages++;
+
+          if (isLastPhotoPage && !canFitClosingOnThisPage) {
+            const closingSheet = document.createElement('div');
+            closingSheet.className = 'report-sheet';
+            closingSheet.innerHTML = `
+              ${createHeaderHTML()}
+              ${createClosingSectionsHTML()}
+            `;
+            container.appendChild(closingSheet);
+            totalPages++;
+          }
+        });
+      }
+
+      document.getElementById('page-count-badge').textContent = `${totalPages} páginas`;
+    }
+
+    // =========================================================================
+    // 7. PRINT TO PDF & EDITABLE WORD (.DOCX) EXPORT
+    // =========================================================================
+    document.getElementById('btn-print-pdf').addEventListener('click', () => {
+      window.print();
+    });
+
+    function dataUrlToUint8Array(dataUrl) {
+      const base64 = dataUrl.split(',')[1];
+      const binary = atob(base64);
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes;
+    }
+
+    function fitDimensions(origW, origH, maxW, maxH) {
+      if (!origW || !origH) return { width: maxW, height: maxH };
+      const ratio = Math.min(maxW / origW, maxH / origH);
+      return {
+        width: Math.round(origW * ratio),
+        height: Math.round(origH * ratio)
+      };
+    }
+
+    document.getElementById('btn-export-docx').addEventListener('click', async () => {
+      if (!window.docx) {
+        alert('La librería de exportación Word aún está cargando. Intenta de nuevo en un segundo.');
+        return;
+      }
+
+      const {
+        Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+        WidthType, AlignmentType, BorderStyle, ImageRun, Header, VerticalAlign, PageBreak
+      } = window.docx;
+
+      const borderSolid = { style: BorderStyle.SINGLE, size: 10, color: '000000' };
+      const bordersAll = { top: borderSolid, bottom: borderSolid, left: borderSolid, right: borderSolid };
+      const bordersNone = {
+        top: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        bottom: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        left: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' },
+        right: { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' }
+      };
+
+      const logoBytes = dataUrlToUint8Array(state.logoDataUrl);
+
+      function buildWordHeader() {
+        return new Header({
+          children: [
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      rowSpan: 3,
+                      width: { size: 27, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: bordersAll,
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new ImageRun({
+                              data: logoBytes,
+                              transformation: { width: 155, height: 52 }
+                            })
+                          ]
+                        })
+                      ]
+                    }),
+                    new TableCell({
+                      rowSpan: 3,
+                      width: { size: 48, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: bordersAll,
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new TextRun({ text: 'INFORME DE MANTENIMIENTO DE', bold: true, font: 'Arial', size: 21 }),
+                          ]
+                        }),
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new TextRun({ text: 'EQUIPOS JR POWER QUALITY', bold: true, font: 'Arial', size: 21 }),
+                          ]
+                        })
+                      ]
+                    }),
+                    new TableCell({
+                      width: { size: 25, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: bordersAll,
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: `CODIGO: ${state.code}`, bold: true, font: 'Arial', size: 18 })]
+                        })
+                      ]
+                    })
+                  ]
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      width: { size: 25, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: bordersAll,
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: `VERSIÓN:${state.version}`, bold: true, font: 'Arial', size: 18 })]
+                        })
+                      ]
+                    })
+                  ]
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      width: { size: 25, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: bordersAll,
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: `FECHA: ${state.formatDate}`, bold: true, font: 'Arial', size: 18 })]
+                        })
+                      ]
+                    })
+                  ]
+                })
+              ]
+            }),
+            new Paragraph({ text: '', spacing: { after: 120 } })
+          ]
+        });
+      }
+
+      const bodyChildren = [
+        new Paragraph({
+          spacing: { before: 80, after: 120 },
+          children: [new TextRun({ text: '1- OBJETIVO', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          indent: { firstLine: 709 },
+          spacing: { after: 200, line: 276 },
+          children: [new TextRun({ text: state.objetivo, font: 'Arial', size: 22 })]
+        }),
+
+        new Paragraph({
+          spacing: { before: 120, after: 120 },
+          children: [new TextRun({ text: '2- ALCANCE', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          indent: { firstLine: 709 },
+          spacing: { after: 200, line: 276 },
+          children: [
+            new TextRun({
+              text: `Comprende las actividades de inventario y mantenimiento realizadas el día ${state.execDate} por el personal encargado de los equipos en bodega, aplicando los parámetros de seguridad y los procesos establecidos para el control y preservación de los activos.`,
+              font: 'Arial',
+              size: 22
+            })
+          ]
+        }),
+
+        new Paragraph({
+          spacing: { before: 120, after: 140 },
+          children: [new TextRun({ text: '3- DEFINICIONES', bold: true, font: 'Arial', size: 22 })]
+        }),
+
+        new Paragraph({
+          spacing: { before: 100, after: 80 },
+          children: [new TextRun({ text: 'Manteniendo:', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 160, line: 276 },
+          children: [
+            new TextRun({
+              text: 'Acciones sistemáticas de limpieza e inspección visual destinadas conservar la operatividad y confiabilidad de los equipos, previniendo fallas antes de su uso.',
+              font: 'Arial',
+              size: 22
+            })
+          ]
+        }),
+
+        new Paragraph({
+          spacing: { before: 100, after: 80 },
+          children: [new TextRun({ text: 'Inventario:', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 160, line: 276 },
+          children: [
+            new TextRun({
+              text: 'Verificación periódica de la existencia real, ubicación y estado de conservación de los activos frente a los registros de control.',
+              font: 'Arial',
+              size: 22
+            })
+          ]
+        }),
+
+        new Paragraph({
+          spacing: { before: 100, after: 80 },
+          children: [new TextRun({ text: 'Equipos de medición:', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 160, line: 276 },
+          children: [
+            new TextRun({
+              text: 'Instrumento utilizado para cuantificar, verificar o ensayar variables eléctricas/físicas y asegurar el cumplimiento de los requisitos técnicos del proyecto.',
+              font: 'Arial',
+              size: 22
+            })
+          ]
+        }),
+
+        new Paragraph({
+          spacing: { before: 100, after: 80 },
+          children: [new TextRun({ text: 'Inspección Visual:', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          spacing: { after: 160, line: 276 },
+          children: [
+            new TextRun({
+              text: 'Revisión física detallada del estado externo de los equipos para identificar daños mecánicos, desgaste, suciedad o condiciones anormales antes de su almacenamiento o puesta en servicio',
+              font: 'Arial',
+              size: 22
+            })
+          ]
+        }),
+
+        // Page break before Section 4
+        new Paragraph({ children: [new PageBreak()] }),
+        new Paragraph({
+          spacing: { before: 40, after: 140 },
+          children: [new TextRun({ text: '4- EJECUCIÓN Y REGISTRO FOTOGRÁFICO', bold: true, font: 'Arial', size: 22 })]
+        })
+      ];
+
+      const activeBorders = state.frameStyle === 'framed' ? bordersAll : bordersNone;
+
+      state.blocks.forEach((blk, idx) => {
+        const p1 = getPhotoById(blk.photoIds[0]);
+        const p2 = blk.photoIds[1] ? getPhotoById(blk.photoIds[1]) : null;
+
+        if (p2 && p1) {
+          const d1 = fitDimensions(p1.width, p1.height, 290, 255);
+          const d2 = fitDimensions(p2.width, p2.height, 290, 255);
+
+          bodyChildren.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      width: { size: 50, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: activeBorders,
+                      margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new ImageRun({
+                              data: dataUrlToUint8Array(p1.dataUrl),
+                              transformation: d1
+                            })
+                          ]
+                        })
+                      ]
+                    }),
+                    new TableCell({
+                      width: { size: 50, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: activeBorders,
+                      margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new ImageRun({
+                              data: dataUrlToUint8Array(p2.dataUrl),
+                              transformation: d2
+                            })
+                          ]
+                        })
+                      ]
+                    })
+                  ]
+                }),
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      columnSpan: 2,
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: activeBorders,
+                      margins: { top: 60, bottom: 60, left: 80, right: 80 },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: blk.title, bold: true, font: 'Arial', size: 21 })]
+                        })
+                      ]
+                    })
+                  ]
+                })
+              ]
+            })
+          );
+        } else if (p1) {
+          const d1 = fitDimensions(p1.width, p1.height, 460, 265);
+          bodyChildren.push(
+            new Table({
+              width: { size: 100, type: WidthType.PERCENTAGE },
+              rows: [
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: activeBorders,
+                      margins: { top: 80, bottom: 80, left: 80, right: 80 },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [
+                            new ImageRun({
+                              data: dataUrlToUint8Array(p1.dataUrl),
+                              transformation: d1
+                            })
+                          ]
+                        })
+                      ]
+                    })
+                  ]
+                }),
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      width: { size: 100, type: WidthType.PERCENTAGE },
+                      verticalAlign: VerticalAlign.CENTER,
+                      borders: activeBorders,
+                      margins: { top: 60, bottom: 60, left: 80, right: 80 },
+                      children: [
+                        new Paragraph({
+                          alignment: AlignmentType.CENTER,
+                          children: [new TextRun({ text: blk.title, bold: true, font: 'Arial', size: 21 })]
+                        })
+                      ]
+                    })
+                  ]
+                })
+              ]
+            })
+          );
+        }
+
+        // Spacing or page break every 2 blocks
+        if (idx < state.blocks.length - 1) {
+          if ((idx + 1) % 2 === 0) {
+            bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
+          } else {
+            bodyChildren.push(new Paragraph({ text: '', spacing: { after: 180 } }));
+          }
+        }
+      });
+
+      // Sections 5 & 6
+      if (state.blocks.length > 0 && state.blocks.length % 2 === 0) {
+        bodyChildren.push(new Paragraph({ children: [new PageBreak()] }));
+      } else {
+        bodyChildren.push(new Paragraph({ text: '', spacing: { after: 180 } }));
+      }
+
+      bodyChildren.push(
+        new Paragraph({
+          spacing: { before: 80, after: 120 },
+          children: [new TextRun({ text: '5- CONCLUSIONES', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          alignment: AlignmentType.JUSTIFIED,
+          indent: { firstLine: 709 },
+          spacing: { after: 200, line: 276 },
+          children: [new TextRun({ text: state.conclusiones, font: 'Arial', size: 22 })]
+        }),
+        new Paragraph({
+          spacing: { before: 120, after: 120 },
+          children: [new TextRun({ text: '6- CONTROL DE CAMBIOS', bold: true, font: 'Arial', size: 22 })]
+        }),
+        new Table({
+          width: { size: 100, type: WidthType.PERCENTAGE },
+          rows: [
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: 28, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'FECHA', bold: true, font: 'Arial', size: 20 })] })]
+                }),
+                new TableCell({
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'CAMBIO', bold: true, font: 'Arial', size: 20 })] })]
+                }),
+                new TableCell({
+                  width: { size: 22, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'VERSION', bold: true, font: 'Arial', size: 20 })] })]
+                })
+              ]
+            }),
+            new TableRow({
+              children: [
+                new TableCell({
+                  width: { size: 28, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: state.formatDate, font: 'Arial', size: 20 })] })]
+                }),
+                new TableCell({
+                  width: { size: 50, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: 'Documento original', font: 'Arial', size: 20 })] })]
+                }),
+                new TableCell({
+                  width: { size: 22, type: WidthType.PERCENTAGE },
+                  borders: bordersAll,
+                  children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: state.version, font: 'Arial', size: 20 })] })]
+                })
+              ]
+            })
+          ]
+        })
+      );
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                size: { width: 12240, height: 15840 }, // US Letter
+                margin: { top: 1450, bottom: 900, left: 1020, right: 1020, header: 560 }
+              }
+            },
+            headers: {
+              default: buildWordHeader()
+            },
+            children: bodyChildren
+          }
+        ]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.code}_INFORME_MANTENIMIENTO_EQUIPOS_JR.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+
+    // Initial render
+    renderReportPages();
+  </script>
+</body>
+</html>
