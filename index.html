@@ -232,6 +232,15 @@
       text-transform: uppercase;
     }
 
+    /* Zoomable Thumbnails & Lightbox Modal */
+    .zoomable-photo {
+      cursor: zoom-in;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .zoomable-photo:hover {
+      transform: scale(1.02);
+    }
+
     /* Print Rules for Exact PDF Generation */
     @media print {
       @page {
@@ -539,6 +548,58 @@
     </div>
 
   </main>
+
+  <!-- IMAGE LIGHTBOX MODAL (NO PRINT) -->
+  <div id="image-lightbox" class="no-print hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex flex-col select-none">
+    <!-- Top Control Bar -->
+    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-slate-900/90 border-b border-slate-800 text-white">
+      <div class="flex items-center gap-3 min-w-0">
+        <span id="lb-badge" class="text-xs font-bold bg-[#162A50] border border-blue-400/30 text-blue-200 px-2.5 py-1 rounded-md shrink-0">
+          Foto 1 / 1
+        </span>
+        <div class="min-w-0">
+          <h4 id="lb-title" class="text-sm font-bold uppercase truncate">EQUIPO</h4>
+          <p id="lb-subtitle" class="text-[11px] text-slate-400 truncate">Clic en la imagen o usa +/- para acercar · Flechas para navegar · ESC para cerrar</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="lb-zoom-out" type="button" title="Alejar (-)"
+          class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold">
+          ➖
+        </button>
+        <span id="lb-zoom-val" class="text-xs font-bold w-12 text-center text-slate-200">100%</span>
+        <button id="lb-zoom-in" type="button" title="Acercar (+)"
+          class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold">
+          ➕
+        </button>
+        <button id="lb-rotate" type="button" title="Girar 90° vista (R)"
+          class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold ml-1">
+          ↻ Girar
+        </button>
+        <button id="lb-close" type="button" title="Cerrar (ESC)"
+          class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold ml-2">
+          ✕ Cerrar
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Image Viewport -->
+    <div id="lb-backdrop" class="relative flex-1 flex items-center justify-center overflow-auto p-4 sm:p-8">
+      <button id="lb-prev" type="button" title="Anterior (←)"
+        class="fixed left-3 sm:left-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/80 hover:bg-[#162A50] text-white border border-slate-700 flex items-center justify-center text-xl shadow-lg transition">
+        ‹
+      </button>
+
+      <img id="lb-img" alt="Vista ampliada"
+        class="max-w-[90vw] max-h-[80vh] object-contain rounded-lg shadow-2xl transition-transform duration-150 cursor-zoom-in" />
+
+      <button id="lb-next" type="button" title="Siguiente (→)"
+        class="fixed right-3 sm:right-6 top-1/2 -translate-y-1/2 z-10 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-900/80 hover:bg-[#162A50] text-white border border-slate-700 flex items-center justify-center text-xl shadow-lg transition">
+        ›
+      </button>
+    </div>
+  </div>
 
   <script>
     // =========================================================================
@@ -1245,14 +1306,17 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         const imgsHtml = p2
           ? `<div class="grid grid-cols-2 grid-rows-1 gap-1.5 h-28 bg-white p-1.5 rounded-lg border border-slate-200 overflow-hidden">
                <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
-                 <img src="${p1?.dataUrl || ''}" class="max-w-full max-h-full object-contain rounded" />
+                 <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen"
+                   class="zoomable-photo max-w-full max-h-full object-contain rounded" />
                </div>
                <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
-                 <img src="${p2?.dataUrl || ''}" class="max-w-full max-h-full object-contain rounded" />
+                 <img src="${p2?.dataUrl || ''}" data-photo-id="${p2?.id || ''}" title="Clic para ampliar imagen"
+                   class="zoomable-photo max-w-full max-h-full object-contain rounded" />
                </div>
              </div>`
           : `<div class="h-28 bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-               <img src="${p1?.dataUrl || ''}" class="max-h-full max-w-full object-contain rounded" />
+               <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen"
+                 class="zoomable-photo max-h-full max-w-full object-contain rounded" />
              </div>`;
 
         card.innerHTML = `
@@ -1367,10 +1431,10 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
             <tbody>
               <tr>
                 <td class="equip-img-cell" style="width:50%;">
-                  <img src="${p1?.dataUrl || ''}" class="equip-img-pair" alt="${escapeHtml(blk.title)}" />
+                  <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen" class="zoomable-photo equip-img-pair" alt="${escapeHtml(blk.title)}" />
                 </td>
                 <td class="equip-img-cell" style="width:50%;">
-                  <img src="${p2?.dataUrl || ''}" class="equip-img-pair" alt="${escapeHtml(blk.title)}" />
+                  <img src="${p2?.dataUrl || ''}" data-photo-id="${p2?.id || ''}" title="Clic para ampliar imagen" class="zoomable-photo equip-img-pair" alt="${escapeHtml(blk.title)}" />
                 </td>
               </tr>
               <tr>
@@ -1386,7 +1450,7 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
           <tbody>
             <tr>
               <td class="equip-img-cell">
-                <img src="${p1?.dataUrl || ''}" class="equip-img-single" alt="${escapeHtml(blk.title)}" />
+                <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen" class="zoomable-photo equip-img-single" alt="${escapeHtml(blk.title)}" />
               </td>
             </tr>
             <tr>
@@ -1998,6 +2062,154 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    });
+
+    // =========================================================================
+    // 8. IMAGE LIGHTBOX (CLICK TO ENLARGE, ZOOM, ROTATE & NAVIGATE)
+    // =========================================================================
+    const lightboxState = {
+      open: false,
+      orderedEntries: [], // [{ photoId, blockTitle, recNum, fileName }]
+      currentIndex: 0,
+      zoom: 1,
+      rotation: 0
+    };
+
+    const elLightbox = document.getElementById('image-lightbox');
+    const elLbImg = document.getElementById('lb-img');
+    const elLbBadge = document.getElementById('lb-badge');
+    const elLbTitle = document.getElementById('lb-title');
+    const elLbSubtitle = document.getElementById('lb-subtitle');
+    const elLbZoomVal = document.getElementById('lb-zoom-val');
+
+    function buildLightboxEntries() {
+      const entries = [];
+      state.blocks.forEach((blk, bIdx) => {
+        blk.photoIds.forEach((pid) => {
+          const photo = getPhotoById(pid);
+          if (photo) {
+            entries.push({
+              photoId: pid,
+              blockTitle: blk.title,
+              recNum: bIdx + 1,
+              fileName: photo.name
+            });
+          }
+        });
+      });
+      return entries;
+    }
+
+    function updateLightboxTransform() {
+      elLbZoomVal.textContent = `${Math.round(lightboxState.zoom * 100)}%`;
+      elLbImg.style.transform = `scale(${lightboxState.zoom}) rotate(${lightboxState.rotation}deg)`;
+      elLbImg.style.cursor = lightboxState.zoom > 1 ? 'zoom-out' : 'zoom-in';
+    }
+
+    function renderLightboxCurrent() {
+      const entry = lightboxState.orderedEntries[lightboxState.currentIndex];
+      if (!entry) return;
+      const photo = getPhotoById(entry.photoId);
+      if (!photo) return;
+
+      lightboxState.zoom = 1;
+      lightboxState.rotation = 0;
+      elLbImg.src = photo.dataUrl;
+      elLbBadge.textContent = `Foto ${lightboxState.currentIndex + 1} / ${lightboxState.orderedEntries.length}`;
+      elLbTitle.textContent = `REC. #${entry.recNum} · ${entry.blockTitle}`;
+      elLbSubtitle.textContent = `Archivo: ${entry.fileName} · Clic en la foto para acercar/alejar · ← → para cambiar · ESC para cerrar`;
+      updateLightboxTransform();
+    }
+
+    function openLightboxByPhotoId(photoId) {
+      const entries = buildLightboxEntries();
+      if (entries.length === 0) return;
+      const foundIdx = entries.findIndex((e) => e.photoId === photoId);
+      lightboxState.orderedEntries = entries;
+      lightboxState.currentIndex = foundIdx >= 0 ? foundIdx : 0;
+      lightboxState.open = true;
+      elLightbox.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      renderLightboxCurrent();
+    }
+
+    function closeLightbox() {
+      lightboxState.open = false;
+      elLightbox.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // Event delegation for clicking any zoomable image
+    document.addEventListener('click', (e) => {
+      const img = e.target.closest('img.zoomable-photo');
+      if (img && img.dataset.photoId) {
+        openLightboxByPhotoId(img.dataset.photoId);
+      }
+    });
+
+    document.getElementById('lb-close').addEventListener('click', closeLightbox);
+
+    document.getElementById('lb-backdrop').addEventListener('click', (e) => {
+      if (e.target.id === 'lb-backdrop') {
+        closeLightbox();
+      }
+    });
+
+    elLbImg.addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxState.zoom = lightboxState.zoom === 1 ? 1.85 : 1;
+      updateLightboxTransform();
+    });
+
+    document.getElementById('lb-zoom-in').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxState.zoom = Math.min(3.5, +(lightboxState.zoom + 0.35).toFixed(2));
+      updateLightboxTransform();
+    });
+
+    document.getElementById('lb-zoom-out').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxState.zoom = Math.max(0.5, +(lightboxState.zoom - 0.35).toFixed(2));
+      updateLightboxTransform();
+    });
+
+    document.getElementById('lb-rotate').addEventListener('click', (e) => {
+      e.stopPropagation();
+      lightboxState.rotation = (lightboxState.rotation + 90) % 360;
+      updateLightboxTransform();
+    });
+
+    document.getElementById('lb-prev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (lightboxState.orderedEntries.length <= 1) return;
+      lightboxState.currentIndex =
+        (lightboxState.currentIndex - 1 + lightboxState.orderedEntries.length) % lightboxState.orderedEntries.length;
+      renderLightboxCurrent();
+    });
+
+    document.getElementById('lb-next').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (lightboxState.orderedEntries.length <= 1) return;
+      lightboxState.currentIndex =
+        (lightboxState.currentIndex + 1) % lightboxState.orderedEntries.length;
+      renderLightboxCurrent();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!lightboxState.open) return;
+      if (e.key === 'Escape') {
+        closeLightbox();
+      } else if (e.key === 'ArrowLeft') {
+        document.getElementById('lb-prev').click();
+      } else if (e.key === 'ArrowRight') {
+        document.getElementById('lb-next').click();
+      } else if (e.key === '+' || e.key === '=') {
+        document.getElementById('lb-zoom-in').click();
+      } else if (e.key === '-') {
+        document.getElementById('lb-zoom-out').click();
+      } else if (e.key.toLowerCase() === 'r') {
+        document.getElementById('lb-rotate').click();
+      }
     });
 
     // Initial render
