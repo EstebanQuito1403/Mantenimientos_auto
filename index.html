@@ -232,6 +232,33 @@
       text-transform: uppercase;
     }
 
+    /* Drag & Drop Reordering + Position Input */
+    .equip-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .equip-card.is-dragging {
+      opacity: 0.45;
+      transform: scale(0.98);
+      border-color: #162A50;
+      box-shadow: 0 8px 20px rgba(22, 42, 80, 0.18);
+    }
+    .equip-card.drag-over-target {
+      border-color: #2563eb !important;
+      background-color: #eff6ff !important;
+      box-shadow: 0 0 0 2px #3b82f6;
+    }
+    .equip-card.just-moved {
+      animation: pulseMoved 1.2s ease-out;
+    }
+    @keyframes pulseMoved {
+      0% { box-shadow: 0 0 0 3px #10b981; background-color: #ecfdf5; }
+      100% { box-shadow: none; }
+    }
+    input[data-pos-input]::-webkit-inner-spin-button,
+    input[data-pos-input]::-webkit-outer-spin-button {
+      opacity: 1;
+    }
+
     /* Zoomable Thumbnails & Lightbox Modal */
     .zoomable-photo {
       cursor: zoom-in;
@@ -476,7 +503,7 @@
             <span>🔍 Revisión Rápida y Vinculación de Equipos</span>
             <span id="badge-counts" class="text-xs font-semibold bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full">0 equipos · 0 fotos</span>
           </h3>
-          <p class="text-xs text-slate-500">Verifica o ajusta nombres, intercambia izquierda/derecha, separa bloques dobles o une dos individuales antes de descargar.</p>
+          <p class="text-xs text-slate-500">Mantén presionada una imagen para arrastrarla a otra posición, escribe el número de posición deseado, o ajusta nombres y vínculos.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -1276,6 +1303,48 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       return state.photos.find((p) => p.id === id);
     }
 
+    let dragSourceIdx = null;
+    let isCurrentlyDragging = false;
+    let lastMovedTargetIdx = null;
+
+    function moveBlockToPosition(fromIdx, toIdx) {
+      if (fromIdx === null || fromIdx === undefined || isNaN(fromIdx) || isNaN(toIdx)) return;
+      const clampedTo = Math.max(0, Math.min(state.blocks.length - 1, toIdx));
+      if (fromIdx === clampedTo || fromIdx < 0 || fromIdx >= state.blocks.length) return;
+
+      const [movedItem] = state.blocks.splice(fromIdx, 1);
+      state.blocks.splice(clampedTo, 0, movedItem);
+      lastMovedTargetIdx = clampedTo;
+
+      renderEditorGrid();
+      renderReportPages();
+
+      // Scroll newly positioned card smoothly into view inside #blocks-grid
+      requestAnimationFrame(() => {
+        const grid = document.getElementById('blocks-grid');
+        const targetCard = grid?.querySelector(`[data-block-idx="${clampedTo}"]`);
+        if (targetCard) {
+          targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+    }
+
+    // Auto-scroll #blocks-grid when dragging near its top or bottom edges
+    (function setupGridDragAutoScroll() {
+      const grid = document.getElementById('blocks-grid');
+      if (!grid) return;
+      grid.addEventListener('dragover', (e) => {
+        if (dragSourceIdx === null) return;
+        const rect = grid.getBoundingClientRect();
+        const edgeZone = 65;
+        if (e.clientY - rect.top < edgeZone) {
+          grid.scrollTop -= 16;
+        } else if (rect.bottom - e.clientY < edgeZone) {
+          grid.scrollTop += 16;
+        }
+      });
+    })();
+
     function renderEditorGrid() {
       const sec = document.getElementById('editor-section');
       const grid = document.getElementById('blocks-grid');
@@ -1295,10 +1364,18 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       btnPdf.disabled = false;
       badge.textContent = `${state.blocks.length} equipos · ${state.photos.length} fotos`;
 
+      const highlightIdx = lastMovedTargetIdx;
+      lastMovedTargetIdx = null;
+
       grid.innerHTML = '';
       state.blocks.forEach((blk, idx) => {
         const card = document.createElement('div');
-        card.className = 'border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex flex-col justify-between gap-2.5 overflow-hidden';
+        card.dataset.blockIdx = idx;
+        card.draggable = true;
+        card.className = 'equip-card relative border border-slate-200 rounded-xl p-3 bg-slate-50/70 flex flex-col justify-between gap-2.5 overflow-hidden select-none';
+        if (highlightIdx === idx) {
+          card.classList.add('just-moved');
+        }
 
         const p1 = getPhotoById(blk.photoIds[0]);
         const p2 = blk.photoIds[1] ? getPhotoById(blk.photoIds[1]) : null;
@@ -1306,31 +1383,46 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
         const imgsHtml = p2
           ? `<div class="grid grid-cols-2 grid-rows-1 gap-1.5 h-28 bg-white p-1.5 rounded-lg border border-slate-200 overflow-hidden">
                <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
-                 <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen"
-                   class="zoomable-photo max-w-full max-h-full object-contain rounded" />
+                 <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" draggable="true"
+                   title="Clic para ampliar · Mantén presionado y arrastra para mover de posición"
+                   class="zoomable-photo max-w-full max-h-full object-contain rounded cursor-grab active:cursor-grabbing" />
                </div>
                <div class="min-w-0 min-h-0 w-full h-full flex items-center justify-center overflow-hidden">
-                 <img src="${p2?.dataUrl || ''}" data-photo-id="${p2?.id || ''}" title="Clic para ampliar imagen"
-                   class="zoomable-photo max-w-full max-h-full object-contain rounded" />
+                 <img src="${p2?.dataUrl || ''}" data-photo-id="${p2?.id || ''}" draggable="true"
+                   title="Clic para ampliar · Mantén presionado y arrastra para mover de posición"
+                   class="zoomable-photo max-w-full max-h-full object-contain rounded cursor-grab active:cursor-grabbing" />
                </div>
              </div>`
           : `<div class="h-28 bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
-               <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" title="Clic para ampliar imagen"
-                 class="zoomable-photo max-h-full max-w-full object-contain rounded" />
+               <img src="${p1?.dataUrl || ''}" data-photo-id="${p1?.id || ''}" draggable="true"
+                 title="Clic para ampliar · Mantén presionado y arrastra para mover de posición"
+                 class="zoomable-photo max-h-full max-w-full object-contain rounded cursor-grab active:cursor-grabbing" />
              </div>`;
 
         card.innerHTML = `
+          <div class="drop-indicator hidden pointer-events-none absolute inset-x-2 top-1.5 z-20 bg-blue-600 text-white text-[11px] font-bold text-center py-1 px-2 rounded-lg shadow-md">
+            ⬇ Soltar aquí en Posición #${idx + 1}
+          </div>
           <div class="space-y-2">
-            <div class="flex items-center justify-between text-[11px] font-bold text-slate-500">
-              <span>REC. #${idx + 1} · ${p2 ? '2 FOTOS VINCULADAS' : '1 FOTO INDIVIDUAL'}</span>
-              <div class="flex items-center gap-1">
-                <button type="button" data-act="up" title="Subir" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↑</button>
-                <button type="button" data-act="down" title="Bajar" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↓</button>
+            <div class="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-500">
+              <div class="flex items-center gap-1 min-w-0">
+                <span title="Arrastra para reordenar" class="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 px-0.5 text-xs">⋮⋮</span>
+                <span class="inline-flex items-center gap-1 text-slate-700">
+                  REC. #
+                  <input type="number" data-pos-input="true" min="1" max="${state.blocks.length}" value="${idx + 1}"
+                    title="Escribe el número de posición (1 a ${state.blocks.length}) y presiona Enter"
+                    class="w-12 text-center font-bold text-slate-900 bg-white border border-slate-300 rounded px-1 py-0.5 text-[11px] focus:outline-none focus:border-[#162A50] focus:ring-1 focus:ring-[#162A50]" />
+                </span>
+                <span class="truncate text-[10px] text-slate-400">· ${p2 ? '2 FOTOS' : '1 FOTO'}</span>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                <button type="button" data-act="up" title="Subir una posición" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↑</button>
+                <button type="button" data-act="down" title="Bajar una posición" class="px-1.5 py-0.5 bg-white border border-slate-200 rounded hover:bg-slate-100">↓</button>
                 <button type="button" data-act="del" title="Eliminar" class="px-1.5 py-0.5 bg-rose-50 text-rose-600 border border-rose-200 rounded hover:bg-rose-100">✕</button>
               </div>
             </div>
             ${imgsHtml}
-            <input type="text" list="equipment-catalog" value="${blk.title.replace(/"/g, '&quot;')}"
+            <input type="text" data-title-input="true" list="equipment-catalog" value="${blk.title.replace(/"/g, '&quot;')}"
               class="w-full text-xs font-bold uppercase bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:outline-none focus:border-[#162A50]" />
           </div>
           <div class="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
@@ -1343,21 +1435,185 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
           </div>
         `;
 
-        // Input change
-        const titleInput = card.querySelector('input');
+        // --- Direct Position Number Input Handling ---
+        const posInput = card.querySelector('input[data-pos-input="true"]');
+        const commitPositionInput = () => {
+          const rawVal = parseInt(posInput.value, 10);
+          if (isNaN(rawVal)) {
+            posInput.value = idx + 1;
+            return;
+          }
+          const clampedPos = Math.max(1, Math.min(state.blocks.length, rawVal));
+          posInput.value = clampedPos;
+          if (clampedPos - 1 !== idx) {
+            moveBlockToPosition(idx, clampedPos - 1);
+          }
+        };
+
+        posInput.addEventListener('focus', () => {
+          card.draggable = false;
+          posInput.select();
+        });
+        posInput.addEventListener('blur', () => {
+          card.draggable = true;
+          commitPositionInput();
+        });
+        posInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            posInput.blur();
+          } else if (e.key === 'Escape') {
+            posInput.value = idx + 1;
+            posInput.blur();
+          }
+        });
+
+        // --- Title Input Handling ---
+        const titleInput = card.querySelector('input[data-title-input="true"]');
+        titleInput.addEventListener('focus', () => {
+          card.draggable = false;
+        });
+        titleInput.addEventListener('blur', () => {
+          card.draggable = true;
+        });
         titleInput.addEventListener('input', (e) => {
           blk.title = e.target.value.toUpperCase();
           renderReportPages();
         });
 
-        // Action buttons
+        // --- Drag & Drop Reordering (works by holding & dragging image or card) ---
+        const dropIndicator = card.querySelector('.drop-indicator');
+
+        card.addEventListener('dragstart', (e) => {
+          if (document.activeElement === titleInput || document.activeElement === posInput) {
+            e.preventDefault();
+            return;
+          }
+          dragSourceIdx = idx;
+          isCurrentlyDragging = true;
+          card.classList.add('is-dragging');
+          if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(idx));
+          }
+        });
+
+        card.addEventListener('dragover', (e) => {
+          if (dragSourceIdx === null || dragSourceIdx === idx) return;
+          e.preventDefault();
+          if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'move';
+          }
+          card.classList.add('drag-over-target');
+          if (dropIndicator) dropIndicator.classList.remove('hidden');
+        });
+
+        card.addEventListener('dragleave', (e) => {
+          if (!card.contains(e.relatedTarget)) {
+            card.classList.remove('drag-over-target');
+            if (dropIndicator) dropIndicator.classList.add('hidden');
+          }
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over-target');
+          if (dropIndicator) dropIndicator.classList.add('hidden');
+          const from = dragSourceIdx !== null ? dragSourceIdx : parseInt(e.dataTransfer?.getData('text/plain'), 10);
+          dragSourceIdx = null;
+          setTimeout(() => { isCurrentlyDragging = false; }, 50);
+          if (!isNaN(from) && from !== idx) {
+            moveBlockToPosition(from, idx);
+          }
+        });
+
+        card.addEventListener('dragend', () => {
+          dragSourceIdx = null;
+          setTimeout(() => { isCurrentlyDragging = false; }, 50);
+          grid.querySelectorAll('.equip-card').forEach((c) => {
+            c.classList.remove('is-dragging', 'drag-over-target');
+            const ind = c.querySelector('.drop-indicator');
+            if (ind) ind.classList.add('hidden');
+          });
+        });
+
+        // --- Touch Long-Press Drag Support (Mobile / Touchscreens) ---
+        let touchHoldTimer = null;
+        let touchDragging = false;
+        let lastTouchTargetIdx = null;
+
+        card.querySelectorAll('img.zoomable-photo').forEach((imgEl) => {
+          imgEl.addEventListener('touchstart', (e) => {
+            if (e.touches.length !== 1) return;
+            touchHoldTimer = setTimeout(() => {
+              touchDragging = true;
+              isCurrentlyDragging = true;
+              card.classList.add('is-dragging');
+              if (navigator.vibrate) navigator.vibrate(30);
+            }, 260);
+          }, { passive: true });
+
+          imgEl.addEventListener('touchmove', (e) => {
+            if (!touchDragging) {
+              clearTimeout(touchHoldTimer);
+              return;
+            }
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = grid.getBoundingClientRect();
+            if (touch.clientY - rect.top < 65) grid.scrollTop -= 14;
+            else if (rect.bottom - touch.clientY < 65) grid.scrollTop += 14;
+
+            const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            const targetCard = elemBelow?.closest('.equip-card');
+            grid.querySelectorAll('.equip-card').forEach((c) => {
+              c.classList.remove('drag-over-target');
+              const ind = c.querySelector('.drop-indicator');
+              if (ind) ind.classList.add('hidden');
+            });
+            if (targetCard && targetCard !== card) {
+              targetCard.classList.add('drag-over-target');
+              const ind = targetCard.querySelector('.drop-indicator');
+              if (ind) ind.classList.remove('hidden');
+              lastTouchTargetIdx = parseInt(targetCard.dataset.blockIdx, 10);
+            } else {
+              lastTouchTargetIdx = null;
+            }
+          }, { passive: false });
+
+          const finishTouch = () => {
+            clearTimeout(touchHoldTimer);
+            if (touchDragging) {
+              touchDragging = false;
+              card.classList.remove('is-dragging');
+              grid.querySelectorAll('.equip-card').forEach((c) => {
+                c.classList.remove('drag-over-target');
+                const ind = c.querySelector('.drop-indicator');
+                if (ind) ind.classList.add('hidden');
+              });
+              const dest = lastTouchTargetIdx;
+              lastTouchTargetIdx = null;
+              setTimeout(() => { isCurrentlyDragging = false; }, 80);
+              if (dest !== null && !isNaN(dest) && dest !== idx) {
+                moveBlockToPosition(idx, dest);
+              }
+            }
+          };
+
+          imgEl.addEventListener('touchend', finishTouch);
+          imgEl.addEventListener('touchcancel', finishTouch);
+        });
+
+        // --- Action buttons ---
         card.querySelectorAll('button[data-act]').forEach((btn) => {
           btn.addEventListener('click', () => {
             const act = btn.dataset.act;
             if (act === 'up' && idx > 0) {
-              [state.blocks[idx - 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx - 1]];
+              moveBlockToPosition(idx, idx - 1);
+              return;
             } else if (act === 'down' && idx < state.blocks.length - 1) {
-              [state.blocks[idx + 1], state.blocks[idx]] = [state.blocks[idx], state.blocks[idx + 1]];
+              moveBlockToPosition(idx, idx + 1);
+              return;
             } else if (act === 'del') {
               state.blocks.splice(idx, 1);
             } else if (act === 'swap' && blk.photoIds.length === 2) {
@@ -2139,8 +2395,9 @@ Responde ÚNICAMENTE con un JSON válido con esta estructura:
       document.body.style.overflow = '';
     }
 
-    // Event delegation for clicking any zoomable image
+    // Event delegation for clicking any zoomable image (ignores drag-and-drop releases)
     document.addEventListener('click', (e) => {
+      if (isCurrentlyDragging) return;
       const img = e.target.closest('img.zoomable-photo');
       if (img && img.dataset.photoId) {
         openLightboxByPhotoId(img.dataset.photoId);
